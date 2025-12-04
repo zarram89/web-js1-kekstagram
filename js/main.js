@@ -1,9 +1,26 @@
-const PHOTO_COUNT = 25;
-const AVATAR_COUNT = 6;
-const LIKE_MIN_COUNT = 15;
-const LIKE_MAX_COUNT = 200;
-const COMMENT_COUNT = 30;
-const COMMENT_LINES = [
+// Функция для генерации случайного целого числа в диапазоне от min до max (включительно)
+const getRandomInteger = (min, max) => {
+  const lower = Math.ceil(Math.min(min, max));
+  const upper = Math.floor(Math.max(min, max));
+  const result = Math.random() * (upper - lower + 1) + lower;
+  return Math.floor(result);
+};
+
+// Функция для получения случайного элемента из массива
+const getRandomArrayElement = (elements) => elements[getRandomInteger(0, elements.length - 1)];
+
+// Функция для создания генератора уникальных ID
+const createIdGenerator = () => {
+  let lastGeneratedId = 0;
+
+  return () => {
+    lastGeneratedId += 1;
+    return lastGeneratedId;
+  };
+};
+
+// Константы для генерации данных
+const MESSAGES = [
   'Всё отлично!',
   'В целом всё неплохо. Но не всё.',
   'Когда вы делаете фотографию, хорошо бы убирать палец из кадра. В конце концов это просто непрофессионально.',
@@ -11,126 +28,94 @@ const COMMENT_LINES = [
   'Я поскользнулся на банановой кожуре и уронил фотоаппарат на кота и у меня получилась фотография лучше.',
   'Лица у людей на фотке перекошены, как будто их избивают. Как можно было поймать такой неудачный момент?!',
 ];
-const DESCRIPTIONS = [
-  'Летний чил на пляже',
-  'Где-то за городом',
-  'Друзья на отдыхе',
-  'Просто красивый вид',
-  'Мой кот',
-  'Вкусный завтрак',
-  'Новая машина',
-  'Поездка в горы',
-  'Концерт любимой группы',
-  'Вечеринка у бассейна',
-];
+
 const NAMES = [
-  'Иван',
-  'Хуан Себастьян',
+  'Артём',
   'Мария',
-  'Кристоф',
-  'Виктор',
-  'Юлия',
-  'Люпита',
-  'Вашингтон',
+  'Иван',
+  'Екатерина',
+  'Дмитрий',
+  'Анна',
+  'Александр',
+  'Ольга',
+  'Максим',
+  'Елена',
+  'Сергей',
+  'Наталья',
 ];
 
-const getRandomInteger = (a, b) => {
-  const lower = Math.ceil(Math.min(a, b));
-  const upper = Math.floor(Math.max(a, b));
-  const result = Math.random() * (upper - lower + 1) + lower;
-  return Math.floor(result);
-};
+const DESCRIPTIONS = [
+  'Закат на пляже',
+  'Горный пейзаж',
+  'Улица старого города',
+  'Портрет друга',
+  'Натюрморт с фруктами',
+  'Архитектурная композиция',
+  'Ночной город',
+  'Весенние цветы',
+  'Зимний лес',
+  'Летний день в парке',
+  'Осенние краски',
+  'Морской берег',
+  'Городская суета',
+  'Тихий уголок природы',
+  'Праздничное настроение',
+  'Минималистичная композиция',
+  'Абстрактное искусство',
+  'Черно-белая фотография',
+  'Винтажный стиль',
+  'Современная архитектура',
+  'Уличная фотография',
+  'Макросъемка',
+  'Панорамный вид',
+  'Портрет в студии',
+  'Репортажная съемка',
+];
 
-const getRandomArrayElement = (elements) =>
-  elements[getRandomInteger(0, elements.length - 1)];
+// Настройки генерации
+const PHOTO_COUNT = 25;
+const MIN_LIKES = 15;
+const MAX_LIKES = 200;
+const MIN_COMMENTS = 0;
+const MAX_COMMENTS = 30;
+const MIN_AVATAR = 1;
+const MAX_AVATAR = 6;
 
-const createIdGenerator = () => {
-  let lastGeneratedId = 0;
-  return () => {
-    lastGeneratedId += 1;
-    return lastGeneratedId;
-  };
-};
-
+// Генераторы ID
 const generateCommentId = createIdGenerator();
 
-const createMessage = () =>
-  Array.from({ length: getRandomInteger(1, 2) }, () =>
-    getRandomArrayElement(COMMENT_LINES),
-  ).join(' ');
-
+// Функция для создания комментария
 const createComment = () => ({
   id: generateCommentId(),
-  avatar: `img/avatar-${getRandomInteger(1, AVATAR_COUNT)}.svg`,
-  message: createMessage(),
+  avatar: `img/avatar-${getRandomInteger(MIN_AVATAR, MAX_AVATAR)}.svg`,
+  message: getRandomInteger(0, 1)
+    ? getRandomArrayElement(MESSAGES)
+    : `${getRandomArrayElement(MESSAGES)} ${getRandomArrayElement(MESSAGES)}`,
   name: getRandomArrayElement(NAMES),
 });
 
+// Функция для создания массива комментариев
+const createComments = () => {
+  const commentsCount = getRandomInteger(MIN_COMMENTS, MAX_COMMENTS);
+  return Array.from({ length: commentsCount }, createComment);
+};
+
+// Функция для создания объекта фотографии
 const createPhoto = (index) => ({
   id: index,
   url: `photos/${index}.jpg`,
   description: getRandomArrayElement(DESCRIPTIONS),
-  likes: getRandomInteger(LIKE_MIN_COUNT, LIKE_MAX_COUNT),
-  comments: Array.from(
-    { length: getRandomInteger(0, COMMENT_COUNT) },
-    createComment,
-  ),
+  likes: getRandomInteger(MIN_LIKES, MAX_LIKES),
+  comments: createComments(),
 });
 
-const getPictures = () =>
-  Array.from({ length: PHOTO_COUNT }, (_, pictureIndex) =>
-    createPhoto(pictureIndex + 1),
-  );
+// Функция для создания массива фотографий
+const createPhotos = () =>
+  Array.from({ length: PHOTO_COUNT }, (_, index) => createPhoto(index + 1));
 
-// eslint-disable-next-line
-console.log(getPictures());
+// Генерация данных
+const photos = createPhotos();
 
-/*
-В этом задании наша цель научиться генерировать временные данные для дальнейшей разработки интерфейса.Данные хоть временные и ненастоящие, но должны быть идентичны по своей структуре оригинальным.
-
-Зачем это нужно ?
-Подготовка
-В форке личного проекта создайте рабочую ветку и встаньте на неё.
-
-В директории / js вашего проекта расположен пустой файл main.js.Подключите его в файле index.html и выполняйте задание в нём.
-
-Генерация данных
-Обратите внимание, в тексте задания вы будете встречать текст в фигурных скобках.Такой текст будет означать, что на месте этого текста должно появиться значение, которое вы возьмёте из данных.Например, в шаблоне может быть написано < div > {{ x }}</div >, и это будет значить, что { { x } } нужно заменить на значение переменной x.Если переменная будет равна 100, то разметка должна выглядеть как < div > 100</div >.Фигурные скобки в этой записи ничего не значат, они просто показывают, что закончилась разметка и в этом месте будут стоять данные.Сами фигурные скобки переносить в разметку не нужно.
-
-В файле main.js напишите необходимые функции для создания массива из 25 сгенерированных объектов.Каждый объект массива — описание фотографии, опубликованной пользователем.
-
-Структура каждого объекта должна быть следующей:
-
-id, число — идентификатор опубликованной фотографии.Это число от 1 до 25. Идентификаторы не должны повторяться.
-
-  url, строка — адрес картинки вида photos / {{ i }}.jpg, где { { i } } — это число от 1 до 25. Адреса картинок не должны повторяться.
-
-    description, строка — описание фотографии.Описание придумайте самостоятельно.
-
-      likes, число — количество лайков, поставленных фотографии.Случайное число от 15 до 200.
-
-comments, массив объектов — список комментариев, оставленных другими пользователями к этой фотографии.Количество комментариев к каждой фотографии — случайное число от 0 до 30. Все комментарии генерируются случайным образом.Пример описания объекта с комментарием:
-
-{
-  id: 135,
-    avatar: 'img/avatar-6.svg',
-      message: 'В целом всё неплохо. Но не всё.',
-        name: 'Артём',
-}
-
-
-У каждого комментария есть идентификатор — id — любое число.Идентификаторы не должны повторяться.
-
-Поле avatar — это строка, значение которой формируется по правилу img / avatar - {{случайное число от 1 до 6 }}.svg.Аватарки подготовлены в директории img.
-
-Для формирования текста комментария — message — вам необходимо взять одно или два случайных предложения из представленных ниже:
-
-Всё отлично!
-В целом всё неплохо.Но не всё.
-Когда вы делаете фотографию, хорошо бы убирать палец из кадра.В конце концов это просто непрофессионально.
-Моя бабушка случайно чихнула с фотоаппаратом в руках и у неё получилась фотография лучше.
-Я поскользнулся на банановой кожуре и уронил фотоаппарат на кота и у меня получилась фотография лучше.
-Лица у людей на фотке перекошены, как будто их избивают.Как можно было поймать такой неудачный момент ? !
-
-Имена авторов также должны быть случайными.Набор имён для комментаторов составьте сами.Подставляйте случайное имя в поле name.
-*/
+// Вывод данных в консоль для проверки
+// eslint-disable-next-line no-console
+console.log(photos);
