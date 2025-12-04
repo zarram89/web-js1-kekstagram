@@ -250,3 +250,163 @@ console.log(photos);
 4. **Масштабируемость**: легко добавлять новые модули
 5. **Читаемость**: код структурирован и понятен
 6. **Инкапсуляция**: приватные функции остаются внутри модуля
+
+---
+
+# План реализации: Отрисовка миниатюр фотографий (module7-task1)
+
+## Описание задачи
+
+Необходимо создать модуль для отрисовки миниатюр фотографий других пользователей. Модуль должен использовать временные данные и шаблон `#picture` для создания DOM-элементов и отображения их в блоке `.pictures`.
+
+## Анализ шаблона
+
+Шаблон `#picture` в `index.html` (строки 216-224):
+
+```html
+<template id="picture">
+  <a href="#" class="picture">
+    <img class="picture__img" src="" width="182" height="182" alt="Случайная фотография">
+    <p class="picture__info">
+      <span class="picture__comments"></span>
+      <span class="picture__likes"></span>
+    </p>
+  </a>
+</template>
+```
+
+##Требования к заполнению данными
+
+- **src** — адрес изображения из поля `url`
+- **alt** — описание изображения из поля `description`
+- **picture__likes** — количество лайков из поля `likes`
+- **picture__comments** — количество комментариев (длина массива `comments`)
+
+## Предлагаемая структура модуля gallery.js
+
+### Функции модуля
+
+1. **createPictureElement(photo)** — создание DOM-элемента миниатюры
+  - Клонирует шаблон `#picture`
+  - Заполняет данными из объекта photo
+  - Возвращает готовый элемент
+
+2. **renderPictures(photos, container)** — отрисовка всех миниатюр
+  - Создает `DocumentFragment`
+  - Создает элементы для каждой фотографии
+  - Вставляет фрагмент в контейнер за одну операцию
+
+### Экспорт
+
+```javascript
+export { renderPictures };
+```
+
+## Предлагаемые изменения
+
+### Реализация модуля gallery.js
+
+#### [MODIFY] [gallery.js](file:///d:/antigravity/anti-keksagram/js/gallery.js)
+
+Заменить заготовку полноценной реализацией:
+
+```javascript
+// Получение шаблона
+const pictureTemplate = document.querySelector('#picture')
+  .content
+  .querySelector('.picture');
+
+// Контейнер для миниатюр
+const picturesContainer = document.querySelector('.pictures');
+
+// Создание элемента миниатюры
+const createPictureElement = (photo) => {
+  const pictureElement = pictureTemplate.cloneNode(true);
+
+  const img = pictureElement.querySelector('.picture__img');
+  img.src = photo.url;
+  img.alt = photo.description;
+
+  pictureElement.querySelector('.picture__likes').textContent = photo.likes;
+  pictureElement.querySelector('.picture__comments').textContent = photo.comments.length;
+
+  return pictureElement;
+};
+
+// Отрисовка миниатюр
+const renderPictures = (photos) => {
+  const fragment = document.createDocumentFragment();
+
+  photos.forEach((photo) => {
+    fragment.appendChild(createPictureElement(photo));
+  });
+
+  picturesContainer.appendChild(fragment);
+};
+
+export { renderPictures };
+```
+
+---
+
+### Обновление main.js
+
+#### [MODIFY] [main.js](file:///d:/antigravity/anti-keksagram/js/main.js)
+
+Импортировать и вызвать функцию отрисовки:
+
+```javascript
+import { createPhotos } from './data.js';
+import { renderPictures } from './gallery.js';
+
+const photos = createPhotos();
+renderPictures(photos);
+```
+
+Примечание: вывод в консоль `console.log(photos)` можно удалить или закомментировать.
+
+---
+
+### Обновление Readme.md
+
+#### [MODIFY] [Readme.md](file:///d:/antigravity/anti-keksagram/Readme.md)
+
+Добавить описание выполненной задачи в свернутом блоке.
+
+## План проверки
+
+### Проверка в браузере
+
+1. Открыть `index.html` в браузере через локальный сервер
+2. Убедиться, что на странице отображаются миниатюры фотографий
+3. Проверить, что отображается ровно 25 миниатюр
+
+### Проверка данных
+
+1. Проверить, что изображения имеют корректные адреса (`photos/1.jpg` ... `photos/25.jpg`)
+2. Проверить, что у каждой миниатюры есть описание в атрибуте `alt`
+3. Проверить, что отображается количество лайков (15-200)
+4. Проверить, что отображается количество комментариев (0-30)
+
+### Проверка кода
+
+1. Убедиться, что используется `DocumentFragment` для вставки элементов
+2. Убедиться, что шаблон клонируется правильно
+3. Проверить отсутствие ошибок в консоли
+
+### Возможные проблемы
+
+**Проблема:** Миниатюры не отображаются
+**Причина:** Блок `.pictures` скрыт или не существует
+**Решение:** Проверить наличие элемента в DOM и его CSS
+
+**Проблема:** Изображения не загружаются
+**Причина:** Неправильные пути к изображениям
+**Решение:** Убедиться, что папка `photos` существует с файлами 1.jpg-25.jpg
+
+## Преимущества реализации
+
+1. **Производительность**: использование `DocumentFragment` минимизирует reflow
+2. **Модульность**: отрисовка отделена от генерации данных
+3. **Переиспользование**: функции можно использовать для обновления галереи
+4. **Читаемость**: код структурирован и понятен
