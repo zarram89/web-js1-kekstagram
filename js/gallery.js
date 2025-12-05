@@ -1,5 +1,7 @@
 // Модуль для отображения галереи миниатюр фотографий
 
+import { showBigPicture } from './preview.js';
+
 // Получение шаблона
 const pictureTemplate = document.querySelector('#picture')
   .content
@@ -19,8 +21,15 @@ const createPictureElement = (photo) => {
   pictureElement.querySelector('.picture__likes').textContent = photo.likes;
   pictureElement.querySelector('.picture__comments').textContent = photo.comments.length;
 
+  // Добавить обработчик клика для открытия полноразмерного просмотра
+  pictureElement.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    showBigPicture(photo);
+  });
+
   return pictureElement;
 };
+
 
 // Отрисовка всех миниатюр
 const renderPictures = (photos) => {

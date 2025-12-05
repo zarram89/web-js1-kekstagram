@@ -410,3 +410,260 @@ renderPictures(photos);
 2. **Модульность**: отрисовка отделена от генерации данных
 3. **Переиспользование**: функции можно использовать для обновления галереи
 4. **Читаемость**: код структурирован и понятен
+
+---
+
+# План реализации: Полноразмерный просмотр фотографий (module8-task1)
+
+## Описание задачи
+
+Реализовать сценарий просмотра фотографий в полноразмерном режиме. При клике на миниатюру должно открываться модальное окно с большим изображением, комментариями и лайками.
+
+## Анализ структуры HTML
+
+Блок `.big-picture` в `index.html` (строки 148-196):
+
+```html
+<section class="big-picture overlay hidden">
+  <div class="big-picture__preview">
+    <div class="big-picture__img">
+      <img src="..." alt="..." width="600" height="600">
+    </div>
+    <div class="big-picture__social social">
+      <div class="social__header">
+        <!-- Аватар и подпись -->
+        <p class="social__caption">...</p>
+        <p class="social__likes">Нравится <span class="likes-count">...</span></p>
+      </div>
+      <!-- Комментарии -->
+      <div class="social__comment-count">
+        <span class="social__comment-shown-count">...</span> из
+        <span class="social__comment-total-count">...</span> комментариев
+      </div>
+      <ul class="social__comments">...</ul>
+      <button class="social__comments-loader comments-loader">...</button>
+    </div>
+    <button class="big-picture__cancel cancel" id="picture-cancel">Закрыть</button>
+  </div>
+</section>
+```
+
+## Требования к заполнению
+
+- **Изображение**: URL в `.big-picture__img img[src]`
+- **Лайки**: количество в `.likes-count`
+- **Комментарии (всего)**: в `.social__comment-total-count`
+- **Комментарии (показано)**: в `.social__comment-shown-count`
+- **Список комментариев**: в `.social__comments`
+- **Описание**: в `.social__caption`
+
+Каждый комментарий должен иметь структуру:
+```html
+<li class="social__comment">
+  <img class="social__picture" src="{{аватар}}" alt="{{имя}}" width="35" height="35">
+  <p class="social__text">{{текст}}</p>
+</li>
+```
+
+## Предлагаемая структура модуля preview.js
+
+### Функции модуля
+
+1. **renderComments(comments)** — отрисовка комментариев
+  - Очищает список
+  - Создает элементы для каждого комментария
+  - Вставляет в `.social__comments`
+
+2. **fillBigPicture(photo)** — заполнение данных
+  - Устанавливает URL изображения
+  - Устанавливает количество лайков
+  - Устанавливает описание
+  - Вызывает renderComments
+
+3. **closeBigPicture()** — закрытие окна
+  - Добавляет класс `hidden` к `.big-picture`
+  - Удаляет класс `modal-open` у `body`
+  - Удаляет обработчик Esc
+
+4. **onDocumentKeydown(evt)** — обработчик Esc
+  - Проверяет клавишу Esc
+  - Вызывает closeBigPicture
+
+5. **showBigPicture(photo)** — открытие окна
+  - Заполняет данные через fillBigPicture
+  - Скрывает блоки счетчика и загрузки
+  - Удаляет класс `hidden` у `.big-picture`
+  - Добавляет класс `modal-open` к `body`
+  - Добавляет обработчик Esc
+
+### Экспорт
+
+```javascript
+export { showBigPicture };
+```
+
+## Предлагаемые изменения
+
+### Реализация preview.js
+
+####  [MODIFY] [preview.js](file:///d:/antigravity/anti-keksagram/js/preview.js)
+
+Заменить заготовку полноценной реализацией:
+
+```javascript
+// Элементы DOM
+const bigPicture = document.querySelector('.big-picture');
+const bigPictureImg = bigPicture.querySelector('.big-picture__img img');
+const likesCount = bigPicture.querySelector('.likes-count');
+const commentsCount = bigPicture.querySelector('.social__comment-total-count');
+const commentsShownCount = bigPicture.querySelector('.social__comment-shown-count');
+const socialComments = bigPicture.querySelector('.social__comments');
+const socialCaption = bigPicture.querySelector('.social__caption');
+const commentCount = bigPicture.querySelector('.social__comment-count');
+const commentsLoader = bigPicture.querySelector('.comments-loader');
+const bigPictureCancel = bigPicture.querySelector('.big-picture__cancel');
+const body = document.body;
+
+// Отрисовка комментариев
+const renderComments = (comments) => {
+  socialComments.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  comments.forEach(({ avatar, name, message }) => {
+    const comment = document.createElement('li');
+    comment.classList.add('social__comment');
+    comment.innerHTML = `
+      <img class="social__picture" src="${avatar}" alt="${name}" width="35" height="35">
+      <p class="social__text">${message}</p>
+    `;
+    fragment.appendChild(comment);
+  });
+
+  socialComments.appendChild(fragment);
+};
+
+// Заполнение данных большого изображения
+const fillBigPicture = ({ url, likes, comments, description }) => {
+  bigPictureImg.src = url;
+  bigPictureImg.alt = description;
+  likesCount.textContent = likes;
+  commentsCount.textContent = comments.length;
+  commentsShownCount.textContent = comments.length;
+  socialCaption.textContent = description;
+  renderComments(comments);
+};
+
+// Закрытие окна
+const closeBigPicture = () => {
+  bigPicture.classList.add('hidden');
+  body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onDocumentKeydown);
+};
+
+// Обработчик Esc
+const onDocumentKeydown = (evt) => {
+  if (evt.key === 'Escape') {
+    closeBigPicture();
+  }
+};
+
+// Открытие окна
+const showBigPicture = (photo) => {
+  fillBigPicture(photo);
+
+  // Скрыть блоки счетчика и загрузки
+  commentCount.classList.add('hidden');
+  commentsLoader.classList.add('hidden');
+
+  // Показать окно
+  bigPicture.classList.remove('hidden');
+  body.classList.add('modal-open');
+
+  // Обработчики закрытия
+  document.addEventListener('keydown', onDocumentKeydown);
+};
+
+// Обработчик клика на кнопку закрытия
+bigPictureCancel.addEventListener('click', closeBigPicture);
+
+export { showBigPicture };
+```
+
+---
+
+### Обновление gallery.js
+
+#### [MODIFY] [gallery.js](file:///d:/antigravity/anti-keksagram/js/gallery.js)
+
+Добавить импорт и обработчики клика:
+
+```javascript
+import { showBigPicture } from './preview.js';
+
+// ... существующий код ...
+
+const createPictureElement = (photo) => {
+  const pictureElement = pictureTemplate.cloneNode(true);
+
+  // ... существующий код заполнения ...
+
+  // Добавить обработчик клика
+  pictureElement.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    showBigPicture(photo);
+  });
+
+  return pictureElement;
+};
+```
+
+---
+
+### Обновление Readme.md
+
+#### [MODIFY] [Readme.md](file:///d:/antigravity/anti-keksagram/Readme.md)
+
+Добавить описание выполненной задачи в свернутом блоке.
+
+## План проверки
+
+### Проверка открытия
+
+1. Открыть страницу в браузере
+2. Кликнуть на любую миниатюру
+3. ✅ Окно полноразмерного просмотра открывается
+4. ✅ Класс `modal-open` добавлен к `body`
+
+### Проверка данных
+
+1. ✅ Отображается корректное изображение
+2. ✅ Отображается количество лайков
+3. ✅ Отображается описание фотографии
+4. ✅ Отображаются все комментарии
+5. ✅ Счетчик показанных комментариев = общему количеству
+6. ✅ Блоки счетчика и загрузки скрыты
+
+### Проверка закрытия
+
+1. ✅ Окно закрывается по клику на кнопку
+2. ✅ Окно закрывается по нажатию Esc
+3. ✅ Класс `modal-open` удаляется из `body`
+4. ✅ Обработчик Esc корректно удаляется
+
+### Возможные проблемы
+
+**Проблема:** Окно не открывается
+**Причина:** Неправильный селектор или обработчик не добавлен
+**Решение:** Проверить селекторы и addEventListener
+
+**Проблема:** Комментарии не отображаются
+**Причина:** Неправильная структура HTML или данные
+**Решение:** Проверить структуру li элементов
+
+## Преимущества реализации
+
+1. **Модульность**: логика просмотра отделена от галереи
+2. **Управление состоянием**: корректное добавление/удаление классов
+3. **Оптимизация**: использование DocumentFragment для комментариев
+4. **UX**: блокировка прокрутки body при открытом модальном окне
+5. **Доступность**: закрытие по Esc для удобства пользователей

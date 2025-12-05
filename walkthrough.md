@@ -503,4 +503,224 @@ gallery.js
 
 ✅ Код соответствует принципам модульности и переиспользования
 
-✅ Приложение готово к добавлению интерактивности
+✅ Прилож
+
+ение готово к добавлению интерактивности
+
+---
+
+# Выполнение задания module8-task1: Полноразмерный просмотр фотографий
+
+## Обзор
+Реализован модуль `preview.js` для отображения фотографий в полноразмерном режиме. Модуль обеспечивает просмотр большого изображения с комментариями и лайками при клике на миниатюру.
+
+## Реализованные изменения
+
+### 1. Реализация модуля preview.js
+
+#### [preview.js](file:///d:/antigravity/anti-keksagram/js/preview.js)
+
+Создан полнофункциональный модуль для работы с модальным окном:
+
+**Получение элементов DOM:**
+```javascript
+const bigPicture = document.querySelector('.big-picture');
+const bigPictureImg = bigPicture.querySelector('.big-picture__img img');
+const likesCount = bigPicture.querySelector('.likes-count');
+// ... и другие элементы
+```
+
+**Функция отрисовки комментариев:**
+```javascript
+const renderComments = (comments) => {
+  socialComments.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  comments.forEach(({ avatar, name, message }) => {
+    const comment = document.createElement('li');
+    comment.classList.add('social__comment');
+    comment.innerHTML = `
+      <img class="social__picture" src="${avatar}" alt="${name}" width="35" height="35">
+      <p class="social__text">${message}</p>
+    `;
+    fragment.appendChild(comment);
+  });
+
+  socialComments.appendChild(fragment);
+};
+```
+
+**Функция заполнения данных:**
+```javascript
+const fillBigPicture = ({ url, likes, comments, description }) => {
+  bigPictureImg.src = url;
+  bigPictureImg.alt = description;
+  likesCount.textContent = likes;
+  commentsCount.textContent = comments.length;
+  commentsShownCount.textContent = comments.length;
+  socialCaption.textContent = description;
+  renderComments(comments);
+};
+```
+
+**Функции открытия и закрытия:**
+```javascript
+const showBigPicture = (photo) => {
+  fillBigPicture(photo);
+  commentCount.classList.add('hidden'); // Скрыть счетчик
+  commentsLoader.classList.add('hidden'); // Скрыть загрузчик
+  bigPicture.classList.remove('hidden');
+  body.classList.add('modal-open'); // Блокировка скролла
+  document.addEventListener('keydown', onDocumentKeydown);
+};
+
+const closeBigPicture = () => {
+  bigPicture.classList.add('hidden');
+  body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onDocumentKeydown);
+};
+```
+
+**Обработчик Esc:**
+```javascript
+const onDocumentKeydown = (evt) => {
+  if (evt.key === 'Escape') {
+    closeBigPicture();
+  }
+};
+```
+
+---
+
+### 2. Обновление gallery.js
+
+#### [gallery.js](file:///d:/antigravity/anti-keksagram/js/gallery.js)
+
+Добавлен импорт и обработчик клика:
+
+```javascript
+import { showBigPicture } from './preview.js';
+
+const createPictureElement = (photo) => {
+  const pictureElement = pictureTemplate.cloneNode(true);
+
+  // ... заполнение данных ...
+
+  // Обработчик клика
+  pictureElement.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    showBigPicture(photo);
+  });
+
+  return pictureElement;
+};
+```
+
+## Тестирование
+
+### Проверка открытия
+
+✅ **Клик на миниатюру**: окно открывается корректно
+
+✅ **Класс modal-open**: добавляется к `body`, блокируя прокрутку фона
+
+✅ **Скрытие блоков**: счетчик и загрузчик комментариев скрыты
+
+### Проверка данных
+
+✅ **Изображение**: отображается корректный URL и описание
+
+✅ **Лайки**: количество лайков отображается правильно
+
+✅ **Количество комментариев**: общее и показанное совпадают
+
+✅ **Комментарии**: все комментарии отрисованы с аватарами и текстом
+
+### Скриншоты результата
+
+#### Открытое модальное окно
+
+![Полноразмерный просмотр фотографии](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/big_picture_open_1764849134847.png)
+
+На скриншоте видно открытое модальное окно с большим изображением, описанием, лайками и комментариями.
+
+#### Закрытое окно после Esc
+
+![Закрытое окно](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/big_picture_closed_1764849170166.png)
+
+Окно успешно закрывается при нажатии Escape, возвращая пользователя к галерее.
+
+### Запись проверки
+
+![Проверка функционала просмотра](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/preview_functionality_1764849080254.webp)
+
+### Проверка закрытия
+
+✅ **Клик на кнопку**: окно закрывается
+
+✅ **Нажатие Esc**: окно закрывается
+
+✅ **Класс modal-open**: удаляется из `body`
+
+✅ **Обработчик Esc**: корректно добавляется и удаляется
+
+## Особенности реализации
+
+### 1. Модульность
+Логика полноразмерного просмотра полностью отделена от галереи. Модуль `preview.js` не зависит от деталей реализации `gallery.js`.
+
+### 2. Управление состоянием
+- Добавление/удаление класса `modal-open` предотвращает прокрутку фона
+- Корректное управление обработчиками событий (добавление при открытии, удаление при закрытии)
+
+### 3. Оптимизация
+Использование `DocumentFragment` для вставки комментариев минимизирует количество reflow.
+
+### 4. UX
+- Блокировка прокрутки body обеспечивает фокус на модальном окне
+- Закрытие по Esc повышает удобство использования
+- Скрытие блоков счетчика и загрузки упрощает интерфейс
+
+### 5. Замыкания
+Обработчик клика на миниатюру сохраняет ссылку на объект `photo` через замыкание, передавая его в `showBigPicture`.
+
+## Архитектура
+
+```
+gallery.js
+  ├── import preview.js → showBigPicture
+  └── createPictureElement(photo)
+      └── addEventListener('click') → showBigPicture(photo)
+
+preview.js
+  ├── DOM elements (bigPicture, etc.)
+  ├── renderComments(comments) → render to DOM
+  ├── fillBigPicture(photo) → fill all data + renderComments
+  ├── closeBigPicture() → hide + remove modal-open + removeEventListener
+  ├── onDocumentKeydown(evt) → check Esc → closeBigPicture
+  └── showBigPicture(photo) → fillBigPicture + show + add modal-open + addEventListener
+```
+
+## Возможные улучшения
+
+1. **Постраничная загрузка комментариев**: реализовать показ первых 5 комментариев с возможностью загрузки еще
+2. **Навигация между фото**: добавить кнопки "Предыдущее/Следующее"
+3. **Закрытие по клику на оверлей**: закрывать окно при клике вне изображения
+4. **Анимация**: плавное появление/исчезновение модального окна
+5. **Клавиатурная навигация**: стрелки для переключения между фото
+
+## Итоги
+
+✅ Задание module8-task1 выполнено полностью
+
+✅ Модуль `preview.js` корректно отображает полноразмерные фото
+
+✅ Реализованы все способы закрытия (кнопка, Esc)
+
+✅ Класс `modal-open` корректно управляет прокруткой
+
+✅ Комментарии отрисовываются с оптимизацией
+
+✅ Интеграция с `gallery.js` выполнена через импорт и обработчики
+
+✅ Приложение готово к дальнейшей разработке функционала
