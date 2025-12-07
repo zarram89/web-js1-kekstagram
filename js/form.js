@@ -1,4 +1,6 @@
 // Модуль для работы с формой загрузки изображения
+import { resetScale } from './scale.js';
+import { resetEffect } from './effect.js';
 
 // Получение элементов DOM
 const uploadInput = document.querySelector('.img-upload__input');
@@ -18,6 +20,10 @@ function closeUploadForm() {
   uploadInput.value = '';
   hashtagsInput.value = '';
   descriptionInput.value = '';
+
+  // Сброс масштаба и эффекта
+  resetScale();
+  resetEffect();
 }
 
 // Обработчик нажатия Esc
