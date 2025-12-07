@@ -724,3 +724,205 @@ preview.js
 ✅ Интеграция с `gallery.js` выполнена через импорт и обработчики
 
 ✅ Приложение готово к дальнейшей разработке функционала
+
+---
+
+# Выполнение задания module8-task2: Постраничная загрузка комментариев
+
+## Обзор
+Доработан модуль `preview.js` для показа комментариев порциями по 5 штук с возможностью загрузки следующих порций по клику на кнопку "Загрузить ещё".
+
+## Реализованные изменения
+
+### Обновление preview.js
+
+#### [preview.js](file:///d:/antigravity/anti-keksagram/js/preview.js)
+
+**Добавлены константы и переменные состояния:**
+
+```javascript
+// Константы
+const COMMENTS_PER_PORTION = 5;
+
+// Переменные состояния
+let currentComments = [];
+let shownCommentsCount = 0;
+```
+
+**Обновлена функция renderComments:**
+
+Теперь принимает параметр `count` и показывает только первые `count` комментариев:
+
+```javascript
+const renderComments = (count) => {
+  socialComments.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  const commentsToShow = currentComments.slice(0, count);
+
+  commentsToShow.forEach(({ avatar, name, message }) => {
+    // создание элемента комментария
+  });
+
+  socialComments.appendChild(fragment);
+};
+```
+
+**Новая функция updateCommentsCount:**
+
+Обновляет счетчики и управляет видимостью кнопки:
+
+```javascript
+const updateCommentsCount = () => {
+  commentsShownCount.textContent = shownCommentsCount;
+  commentsCount.textContent = currentComments.length;
+
+  // Скрыть кнопку если все комментарии показаны
+  if (shownCommentsCount >= currentComments.length) {
+    commentsLoader.classList.add('hidden');
+  } else {
+    commentsLoader.classList.remove('hidden');
+  }
+};
+```
+
+**Новая функция loadMoreComments:**
+
+Загружает следующие 5 комментариев:
+
+```javascript
+const loadMoreComments = () => {
+  shownCommentsCount = Math.min(
+    shownCommentsCount + COMMENTS_PER_PORTION,
+    currentComments.length
+  );
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
+};
+```
+
+**Обновлена функция fillBigPicture:**
+
+```javascript
+const fillBigPicture = ({ url, likes, comments, description }) => {
+  // ... установка url, likes, description
+
+  // Сохранить комментарии и показать первые 5
+  currentComments = comments;
+  shownCommentsCount = Math.min(COMMENTS_PER_PORTION, comments.length);
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
+};
+```
+
+**Обновлена функция showBigPicture:**
+
+Теперь показывает блок счетчика:
+
+```javascript
+const showBigPicture = (photo) => {
+  fillBigPicture(photo);
+
+  // Показать блоки счетчика
+  commentCount.classList.remove('hidden');
+  // commentsLoader показывается/скрывается в updateCommentsCount
+
+  // ... остальной код
+};
+```
+
+**Добавлен обработчик на кнопку:**
+
+```javascript
+commentsLoader.addEventListener('click', loadMoreComments);
+```
+
+## Тестирование
+
+### Проверка начального состояния
+
+✅ **Первая фотография (20 комментариев):**
+- Показаны первые 5 комментариев
+- Счетчик показывает "5 из 20"
+- Кнопка "Загрузить ещё" видна
+
+![Начальное состояние - 5 комментариев](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/comments_initial_1764915992472.png)
+
+### Проверка загрузки порций
+
+✅ **После первого клика:**
+- Показано 10 комментариев
+- Счетчик "10 из 20"
+- Кнопка видна
+
+![10 комментариев](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/comments_10_1764916026049.png)
+
+✅ **После второго клика:**
+- Показано 15 комментариев
+- Счетчик "15 из 20"
+- Кнопка видна
+
+![15 комментариев](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/comments_15_1764916060411.png)
+
+✅ **После третьего клика:**
+- Показано 20 комментариев (все)
+- Счетчик "20 из 20"
+- Кнопка скрыта
+
+![Все 20 комментариев](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/comments_20_1764916097351.png)
+
+### Запись проверки
+
+![Проверка постраничной загрузки](C:/Users/zarra/.gemini/antigravity/brain/c24ee32d-ecd8-4870-a8ee-f56765c82a9d/pagination_comments_test_1764915939911.webp)
+
+### Проверка граничных случаев
+
+✅ **Фото с менее чем 5 комментариями:**
+- Показаны все комментарии
+- Счетчик отображает корректное значение
+- Кнопка скрыта
+
+✅ **Фото с ровно 5 комментариями:**
+- Показаны все 5
+- Кнопка скрыта
+
+## Особенности реализации
+
+### 1. Управление состоянием
+Использование переменных модуля `currentComments` и `shownCommentsCount` для хранения текущего состояния.
+
+### 2. Инкрементальная отрисовка
+Функция `renderComments` каждый раз полностью перерисовывает список, используя `slice(0, count)` для получения нужного количества комментариев.
+
+### 3. Умное управление кнопкой
+Кнопка автоматически показывается/скрывается в зависимости от того, показаны ли все комментарии.
+
+### 4. Использование Math.min
+Безопасное вычисление количества комментариев для показа, чтобы избежать выхода за пределы массива.
+
+### 5. Константа COMMENTS_PER_PORTION
+Легко изменить размер порции, изменив одну константу.
+
+## Преимущества реализации
+
+1. **UX**: Не перегружаем интерфейс при большом количестве комментариев
+2. **Производительность**: Меньше DOM-элементов при первой загрузке
+3. **Простота**: Комментарии из массива, без запросов к серверу
+4. **Гибкость**: Легко настроить размер порции
+5. **Понятность**: Счетчик всегда показывает текущее состояние
+
+## Итоги
+
+✅ Задание module8-task2 выполнено полностью
+
+✅ Комментарии показываются порциями по 5
+
+✅ Кнопка "Загрузить ещё" работает корректно
+
+✅ Счетчик обновляется после каждой загрузки
+
+✅ Кнопка скрывается когда все комментарии показаны
+
+✅ Блоки счетчика и загрузчика теперь видны
+
+✅ Функционал протестирован на разных сценариях

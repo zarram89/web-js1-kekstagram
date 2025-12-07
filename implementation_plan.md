@@ -667,3 +667,242 @@ const createPictureElement = (photo) => {
 3. **Оптимизация**: использование DocumentFragment для комментариев
 4. **UX**: блокировка прокрутки body при открытом модальном окне
 5. **Доступность**: закрытие по Esc для удобства пользователей
+
+---
+
+# План реализации: Постраничная загрузка комментариев (module8-task2)
+
+## Описание задачи
+
+Доработать функционал полноразмерного просмотра, чтобы комментарии показывались не все сразу, а порциями по 5 штук. Пользователь может загрузить следующие 5 комментариев, нажав кнопку "Загрузить ещё".
+
+## Требования
+
+1. Показать блоки `.social__comment-count` и `.comments-loader` (убрать класс `hidden`)
+2. При открытии показывать только первые 5 комментариев
+3. По клику на кнопку "Загрузить ещё" показывать следующие 5 комментариев
+4. Обновлять счетчик показанных комментариев `.social__comment-shown-count`
+5. Скрывать кнопку когда все комментарии показаны
+
+## Текущая реализация
+
+Сейчас в `preview.js`:
+- Функция `renderComments(comments)` показывает все комментарии сразу
+- Блоки счетчика и загрузчика скрываются при открытии окна
+
+## Предлагаемые изменения
+
+### Обновление preview.js
+
+#### Новые переменные состояния
+
+```javascript
+const COMMENTS_PER_PORTION = 5; // Количество комментариев в одной порции
+let currentComments = []; // Текущий массив комментариев
+let shownCommentsCount = 0; // Количество показанных комментариев
+```
+
+#### Обновление функции renderComments
+
+```javascript
+const renderComments = (count) => {
+  socialComments.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  // Показываем комментарии от 0 до count
+  const commentsToShow = currentComments.slice(0, count);
+
+  commentsToShow.forEach(({ avatar, name, message }) => {
+    const comment = document.createElement('li');
+    comment.classList.add('social__comment');
+    comment.innerHTML = `
+      <img class="social__picture" src="${avatar}" alt="${name}" width="35" height="35">
+      <p class="social__text">${message}</p>
+    `;
+    fragment.appendChild(comment);
+  });
+
+  socialComments.appendChild(fragment);
+};
+```
+
+#### Новая функция updateCommentsCount
+
+```javascript
+const updateCommentsCount = () => {
+  commentsShownCount.textContent = shownCommentsCount;
+  commentsCount.textContent = currentComments.length;
+
+  // Скрыть кнопку если все показаны
+  if (shownCommentsCount >= currentComments.length) {
+    commentsLoader.classList.add('hidden');
+  } else {
+    commentsLoader.classList.remove('hidden');
+  }
+};
+```
+
+#### Новая функция loadMoreComments
+
+```javascript
+const loadMoreComments = () => {
+  shownCommentsCount = Math.min(
+    shownCommentsCount + COMMENTS_PER_PORTION,
+    currentComments.length
+  );
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
+};
+```
+
+#### Обновление функции fillBigPicture
+
+```javascript
+const fillBigPicture = ({ url, likes, comments, description }) => {
+  bigPictureImg.src = url;
+  bigPictureImg.alt = description;
+  likesCount.textContent = likes;
+  socialCaption.textContent = description;
+
+  // Сохранить комментарии
+  currentComments = comments;
+
+  // Показать первые 5 комментариев
+  shownCommentsCount = Math.min(COMMENTS_PER_PORTION, comments.length);
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
+};
+```
+
+#### Обновление функции showBigPicture
+
+```javascript
+const showBigPicture = (photo) => {
+  fillBigPicture(photo);
+
+  // Показать блоки счетчика и загрузки (убрать hidden)
+  commentCount.classList.remove('hidden');
+  // commentsLoader будет показан/скрыт в updateCommentsCount
+
+  bigPicture.classList.remove('hidden');
+  body.classList.add('modal-open');
+  document.addEventListener('keydown', onDocumentKeydown);
+};
+```
+
+#### Добавление обработчика на кнопку
+
+```javascript
+commentsLoader.addEventListener('click', loadMoreComments);
+```
+
+## Полный обновленный код preview.js
+
+```javascript
+// Константы
+const COMMENTS_PER_PORTION = 5;
+
+// Переменные состояния
+let currentComments = [];
+let shownCommentsCount = 0;
+
+// Отрисовка комментариев
+const renderComments = (count) => {
+  socialComments.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  const commentsToShow = currentComments.slice(0, count);
+
+  commentsToShow.forEach(({ avatar, name, message }) => {
+    const comment = document.createElement('li');
+    comment.classList.add('social__comment');
+    comment.innerHTML = `
+      <img class="social__picture" src="${avatar}" alt="${name}" width="35" height="35">
+      <p class="social__text">${message}</p>
+    `;
+    fragment.appendChild(comment);
+  });
+
+  socialComments.appendChild(fragment);
+};
+
+// Обновление счетчиков комментариев
+const updateCommentsCount = () => {
+  commentsShownCount.textContent = shownCommentsCount;
+  commentsCount.textContent = currentComments.length;
+
+  if (shownCommentsCount >= currentComments.length) {
+    commentsLoader.classList.add('hidden');
+  } else {
+    commentsLoader.classList.remove('hidden');
+  }
+};
+
+// Загрузка следующей порции комментариев
+const loadMoreComments = () => {
+  shownCommentsCount = Math.min(
+    shownCommentsCount + COMMENTS_PER_PORTION,
+    currentComments.length
+  );
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
+};
+
+// Заполнение данных
+const fillBigPicture = ({ url, likes, comments, description }) => {
+  bigPictureImg.src = url;
+  bigPictureImg.alt = description;
+  likesCount.textContent = likes;
+  socialCaption.textContent = description;
+
+  currentComments = comments;
+  shownCommentsCount = Math.min(COMMENTS_PER_PORTION, comments.length);
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
+};
+
+// Обработчик кнопки загрузки
+commentsLoader.addEventListener('click', loadMoreComments);
+```
+
+## План проверки
+
+### Тест 1: Фото с более чем 5 комментариями
+
+1. Открыть фото с >5 комментариями
+2. ✅ Показаны первые 5 комментариев
+3. ✅ Счетчик показывает "5 из X"
+4. ✅ Кнопка "Загрузить ещё" видна
+5. Кликнуть на кнопку
+6. ✅ Показано 10 комментариев (или меньше если всего <10)
+7. ✅ Счетчик обновлен
+
+### Тест 2: Фото с менее чем 5 комментариями
+
+1. Открыть фото с ≤5 комментариями
+2. ✅ Показаны все комментарии
+3. ✅ Счетчик показывает "X из X"
+4. ✅ Кнопка "Загрузить ещё" скрыта
+
+### Тест 3: Фото с ровно 5 комментариями
+
+1. Открыть фото с 5 комментариями
+2. ✅ Показаны все 5
+3. ✅ Счетчик "5 из 5"
+4. ✅ Кнопка скрыта
+
+### Тест 4: Загрузка всех комментариев
+
+1. Открыть фото с 12 комментариями
+2. ✅ Показано 5, кнопка видна
+3. Кликнуть "Загрузить ещё"
+4. ✅ Показано 10, кнопка видна
+5. Кликнуть еще раз
+6. ✅ Показано 12, кнопка скрыта
+
+## Преимущества реализации
+
+1. **UX**: не перегружаем интерфейс большим количеством комментариев
+2. **Производительность**: меньше DOM-элементов при первой отрисовке
+3. **Простота**: комментарии не загружаются с сервера, просто показываются из массива
+4. **Гибкость**: легко изменить размер порции (константа COMMENTS_PER_PORTION)

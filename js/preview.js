@@ -1,5 +1,8 @@
 // Модуль для отображения фотографии в полноразмерном режиме
 
+// Константы
+const COMMENTS_PER_PORTION = 5;
+
 // Элементы DOM
 const bigPicture = document.querySelector('.big-picture');
 const bigPictureImg = bigPicture.querySelector('.big-picture__img img');
@@ -13,12 +16,18 @@ const commentsLoader = bigPicture.querySelector('.comments-loader');
 const bigPictureCancel = bigPicture.querySelector('.big-picture__cancel');
 const body = document.body;
 
+// Переменные состояния
+let currentComments = [];
+let shownCommentsCount = 0;
+
 // Отрисовка комментариев
-const renderComments = (comments) => {
+const renderComments = (count) => {
   socialComments.innerHTML = '';
   const fragment = document.createDocumentFragment();
 
-  comments.forEach(({ avatar, name, message }) => {
+  const commentsToShow = currentComments.slice(0, count);
+
+  commentsToShow.forEach(({ avatar, name, message }) => {
     const comment = document.createElement('li');
     comment.classList.add('social__comment');
     comment.innerHTML = `
@@ -31,15 +40,41 @@ const renderComments = (comments) => {
   socialComments.appendChild(fragment);
 };
 
+// Обновление счетчиков комментариев
+const updateCommentsCount = () => {
+  commentsShownCount.textContent = shownCommentsCount;
+  commentsCount.textContent = currentComments.length;
+
+  // Скрыть кнопку если все комментарии показаны
+  if (shownCommentsCount >= currentComments.length) {
+    commentsLoader.classList.add('hidden');
+  } else {
+    commentsLoader.classList.remove('hidden');
+  }
+};
+
+// Загрузка следующей порции комментариев
+const loadMoreComments = () => {
+  shownCommentsCount = Math.min(
+    shownCommentsCount + COMMENTS_PER_PORTION,
+    currentComments.length
+  );
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
+};
+
 // Заполнение данных большого изображения
 const fillBigPicture = ({ url, likes, comments, description }) => {
   bigPictureImg.src = url;
   bigPictureImg.alt = description;
   likesCount.textContent = likes;
-  commentsCount.textContent = comments.length;
-  commentsShownCount.textContent = comments.length;
   socialCaption.textContent = description;
-  renderComments(comments);
+
+  // Сохранить комментарии и показать первые 5
+  currentComments = comments;
+  shownCommentsCount = Math.min(COMMENTS_PER_PORTION, comments.length);
+  renderComments(shownCommentsCount);
+  updateCommentsCount();
 };
 
 // Закрытие окна
@@ -60,9 +95,8 @@ function onDocumentKeydown(evt) {
 const showBigPicture = (photo) => {
   fillBigPicture(photo);
 
-  // Скрыть блоки счетчика и загрузки
-  commentCount.classList.add('hidden');
-  commentsLoader.classList.add('hidden');
+  // Показать блоки счетчика (загрузчик показывается/скрывается в updateCommentsCount)
+  commentCount.classList.remove('hidden');
 
   // Показать окно
   bigPicture.classList.remove('hidden');
@@ -74,5 +108,8 @@ const showBigPicture = (photo) => {
 
 // Обработчик клика на кнопку закрытия
 bigPictureCancel.addEventListener('click', closeBigPicture);
+
+// Обработчик клика на кнопку "Загрузить ещё"
+commentsLoader.addEventListener('click', loadMoreComments);
 
 export { showBigPicture };
