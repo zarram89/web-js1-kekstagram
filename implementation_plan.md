@@ -906,3 +906,262 @@ commentsLoader.addEventListener('click', loadMoreComments);
 2. **Производительность**: меньше DOM-элементов при первой отрисовке
 3. **Простота**: комментарии не загружаются с сервера, просто показываются из массива
 4. **Гибкость**: легко изменить размер порции (константа COMMENTS_PER_PORTION)
+
+---
+
+# План реализации: Валидация формы загрузки изображения (module9-task1)
+
+## Описание задачи
+
+Добавить валидацию формы загрузки изображения с использованием библиотеки Pristine. Реализовать открытие/закрытие формы и валидацию хэштегов и комментариев согласно техническому заданию.
+
+## Требования из ТЗ
+
+### Хэштеги (пункт 2.3)
+- Начинаются с символа `#`
+- После решётки — только буквы и цифры
+- Не может быть только `#`
+- Максимальная длина — 20 символов (включая `#`)
+- Регистронезависимая уникальность
+- Разделяются пробелами
+- Максимум 5 хэштегов
+- Необязательное поле
+- При фокусе в поле Esc не закрывает форму
+
+### Комментарий (пункт 2.4)
+- Необязательное поле
+- Максимум 140 символов
+- При фокусе в поле Esc не закрывает форму
+
+### Форма (пункт 1.2)
+- Открывается при выборе файла
+- Показывается `.img-upload__overlay` (убрать класс `hidden`)
+- `body` добавляется класс `modal-open`
+- Закрывается по кнопке `.img-upload__cancel` или Esc
+- При закрытии сбрасываются все поля
+
+## Предложенные изменения
+
+### 1. index.html
+
+#### [MODIFY] [index.html](file:///d:/antigravity/anti-keksagram/index.html)
+
+**Добавить атрибуты формы:**
+```html
+<form
+  class="img-upload__form"
+  id="upload-select-image"
+  method="POST"
+  enctype="multipart/form-data"
+  action="https://32.javascript.htmlacademy.pro/kekstagram"
+  autocomplete="off">
+```
+
+**Подключить библиотеку Pristine:**
+```html
+<script src="vendor/pristine/pristine.min.js"></script>
+<script src="js/main.js" type="module"></script>
+```
+
+---
+
+### 2. js/form.js
+
+#### [MODIFY] [form.js](file:///d:/antigravity/anti-keksagram/js/form.js)
+
+Модуль управления формой загрузки изображения.
+
+**Элементы DOM:**
+```javascript
+const uploadInput = document.querySelector('.img-upload__input');
+const uploadOverlay = document.querySelector('.img-upload__overlay');
+const uploadCancel = document.querySelector('.img-upload__cancel');
+const hashtagsInput = document.querySelector('.text__hashtags');
+const descriptionInput = document.querySelector('.text__description');
+const body = document.querySelector('body');
+```
+
+**Функция открытия формы:**
+```javascript
+function openUploadForm() {
+  uploadOverlay.classList.remove('hidden');
+  body.classList.add('modal-open');
+  document.addEventListener('keydown', onDocumentKeydown);
+}
+```
+
+**Функция закрытия формы:**
+```javascript
+function closeUploadForm() {
+  uploadOverlay.classList.add('hidden');
+  body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onDocumentKeydown);
+
+  // Сброс формы
+  uploadInput.value = '';
+  hashtagsInput.value = '';
+  descriptionInput.value = '';
+}
+```
+
+**Обработчик Esc с проверкой фокуса:**
+```javascript
+function onDocumentKeydown(evt) {
+  if (evt.key === 'Escape') {
+    const activeElement = document.activeElement;
+    const isTextFieldFocused =
+      activeElement === hashtagsInput ||
+      activeElement === descriptionInput;
+
+    if (!isTextFieldFocused) {
+      closeUploadForm();
+    }
+  }
+}
+```
+
+**Инициализация:**
+```javascript
+uploadInput.addEventListener('change', openUploadForm);
+uploadCancel.addEventListener('click', closeUploadForm);
+```
+
+---
+
+### 3. js/validation.js
+
+#### [MODIFY] [validation.js](file:///d:/antigravity/anti-keksagram/js/validation.js)
+
+Модуль валидации с библиотекой Pristine.
+
+**Константы:**
+```javascript
+const MAX_HASHTAGS = 5;
+const MAX_COMMENT_LENGTH = 140;
+const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
+```
+
+**Инициализация Pristine:**
+```javascript
+const pristine = new Pristine(form, {
+  classTo: 'img-upload__field-wrapper',
+  errorTextParent: 'img-upload__field-wrapper',
+  errorTextClass: 'img-upload__field-wrapper--error',
+});
+```
+
+**Вспомогательные функции:**
+```javascript
+const parseHashtags = (value) => {
+  if (!value.trim()) return [];
+  return value.trim().split(/\s+/);
+};
+```
+
+**Валидаторы хэштегов:**
+
+1. **Формат хэштега:**
+```javascript
+const validateHashtagFormat = (value) => {
+  const hashtags = parseHashtags(value);
+  if (hashtags.length === 0) return true;
+  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
+};
+```
+
+2. **Количество хэштегов:**
+```javascript
+const validateHashtagCount = (value) => {
+  const hashtags = parseHashtags(value);
+  return hashtags.length <= MAX_HASHTAGS;
+};
+```
+
+3. **Уникальность хэштегов:**
+```javascript
+const validateHashtagUniqueness = (value) => {
+  const hashtags = parseHashtags(value);
+  const lowerCaseHashtags = hashtags.map((tag) => tag.toLowerCase());
+  const uniqueHashtags = new Set(lowerCaseHashtags);
+  return uniqueHashtags.size === hashtags.length;
+};
+```
+
+**Валидатор комментария:**
+```javascript
+const validateCommentLength = (value) => value.length <= MAX_COMMENT_LENGTH;
+```
+
+**Добавление валидаторов:**
+```javascript
+pristine.addValidator(hashtagsInput, validateHashtagFormat, 'Неправильный хэштег');
+pristine.addValidator(hashtagsInput, validateHashtagCount, 'Превышено количество хэштегов');
+pristine.addValidator(hashtagsInput, validateHashtagUniqueness, 'Хэштеги повторяются');
+pristine.addValidator(descriptionTextarea, validateCommentLength, 'Длина комментария больше 140 символов');
+```
+
+**Обработка отправки формы:**
+```javascript
+form.addEventListener('submit', (evt) => {
+  evt.preventDefault();
+  const isValid = pristine.validate();
+  if (isValid) {
+    // TODO: отправка на сервер
+  }
+});
+```
+
+---
+
+### 4. js/main.js
+
+#### [MODIFY] [main.js](file:///d:/antigravity/anti-keksagram/js/main.js)
+
+Импортировать новые модули:
+
+```javascript
+import './form.js';
+import './validation.js';
+```
+
+---
+
+## План проверки
+
+### Автоматизированное тестирование
+
+| Тест | Входные данные | Ожидаемый результат |
+|------|----------------|---------------------|
+| Pristine загружена | - | `typeof Pristine === 'function'` |
+| Невалидный хэштег | `invalid` | Ошибка "Неправильный хэштег" |
+| Валидные хэштеги | `#test #hello` | Валидация пройдена |
+| Дубликаты | `#test #TEST #Test` | Ошибка "Хэштеги повторяются" |
+| Превышение лимита | `#one #two #three #four #five #six` | Ошибка "Превышено количество хэштегов" |
+| Длинный хэштег | `#verylonghashtagmorethan20characters` | Ошибка "Неправильный хэштег" |
+| Длинный комментарий | 150 символов | Ошибка "Длина комментария больше 140 символов" |
+| Пустые поля | Пустые хэштеги и комментарий | Валидация пройдена |
+
+### Ручное тестирование
+
+| Тест | Действия | Ожидаемый результат |
+|------|---------|---------------------|
+| Открытие формы | Выбор файла | Форма открылась |
+| Закрытие по кнопке | Клик на × | Форма закрылась |
+| Закрытие по Esc | Esc (фокус вне полей) | Форма закрылась |
+| Esc в хэштегах | Фокус в хэштегах → Esc | Форма НЕ закрылась |
+| Esc в комментарии | Фокус в комментарии → Esc | Форма НЕ закрылась |
+| Сброс полей | Ввод → закрытие → открытие | Поля пустые |
+
+---
+
+## Критерии приёмки
+
+- ✅ Форма имеет корректные атрибуты `method`, `enctype`, `action`
+- ✅ Форма открывается при выборе файла
+- ✅ Форма закрывается по кнопке и Esc
+- ✅ Esc не закрывает форму при фокусе в текстовых полях
+- ✅ Все хэштег-правила валидируются корректно
+- ✅ Комментарий валидируется корректно
+- ✅ Форма не отправляется при невалидных данных
+- ✅ Поля сбрасываются при закрытии формы
+- ✅ Код соответствует ESLint

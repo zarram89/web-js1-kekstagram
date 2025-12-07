@@ -926,3 +926,238 @@ commentsLoader.addEventListener('click', loadMoreComments);
 ✅ Блоки счетчика и загрузчика теперь видны
 
 ✅ Функционал протестирован на разных сценариях
+
+---
+
+# Выполнение задания module9-task1: Валидация формы загрузки изображения
+
+## Обзор
+Реализована комплексная система валидации формы загрузки изображения с использованием библиотеки Pristine. Добавлено управление открытием/закрытием формы с учётом фокуса в текстовых полях.
+
+## Реализованные изменения
+
+### 1. Настройка формы в index.html
+
+#### [index.html](file:///d:/antigravity/anti-keksagram/index.html#L35-36)
+
+**Добавлены атрибуты формы:**
+```html
+<form class="img-upload__form" id="upload-select-image"
+  method="POST"
+  enctype="multipart/form-data"
+  action="https://32.javascript.htmlacademy.pro/kekstagram"
+  autocomplete="off">
+```
+
+**Подключена библиотека Pristine:**
+```html
+<script src="vendor/pristine/pristine.min.js"></script>
+<script src="js/main.js" type="module"></script>
+```
+
+---
+
+### 2. Реализация модуля form.js
+
+#### [form.js](file:///d:/antigravity/anti-keksagram/js/form.js)
+
+Модуль управления открытием и закрытием формы загрузки изображения.
+
+**Функциональность:**
+
+**Открытие формы:**
+```javascript
+function openUploadForm() {
+  uploadOverlay.classList.remove('hidden');
+  body.classList.add('modal-open');
+  document.addEventListener('keydown', onDocumentKeydown);
+}
+```
+- Срабатывает при выборе файла через `.img-upload__input`
+- Показывает оверлей и блокирует прокрутку body
+
+**Закрытие формы:**
+```javascript
+function closeUploadForm() {
+  uploadOverlay.classList.add('hidden');
+  body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onDocumentKeydown);
+
+  uploadInput.value = '';
+  hashtagsInput.value = '';
+  descriptionInput.value = '';
+}
+```
+- Срабатывает по кнопке `.img-upload__cancel` или Esc
+- Сбрасывает все поля формы
+
+**Проверка фокуса при Esc:**
+```javascript
+function onDocumentKeydown(evt) {
+  if (evt.key === 'Escape') {
+    const activeElement = document.activeElement;
+    const isTextFieldFocused =
+      activeElement === hashtagsInput ||
+      activeElement === descriptionInput;
+
+    if (!isTextFieldFocused) {
+      closeUploadForm();
+    }
+  }
+}
+```
+- Предотвращает закрытие формы при фокусе в текстовых полях
+
+---
+
+### 3. Реализация модуля validation.js
+
+#### [validation.js](file:///d:/antigravity/anti-keksagram/js/validation.js)
+
+Модуль валидации полей формы с использованием Pristine.
+
+**Константы:**
+```javascript
+const MAX_HASHTAGS = 5;
+const MAX_COMMENT_LENGTH = 140;
+const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
+```
+
+**Инициализация Pristine:**
+```javascript
+const pristine = new Pristine(form, {
+  classTo: 'img-upload__field-wrapper',
+  errorTextParent: 'img-upload__field-wrapper',
+  errorTextClass: 'img-upload__field-wrapper--error',
+});
+```
+
+**Валидация хэштегов:**
+
+1. **Формат хэштега** - регулярное выражение проверяет:
+  - Начало с `#`
+  - Только буквы (англ/рус) и цифры после `#`
+  - Длина от 1 до 19 символов (+ `#` = макс 20)
+
+2. **Количество хэштегов** - максимум 5 хэштегов
+
+3. **Уникальность хэштегов** - регистронезависимая проверка через `Set`
+
+4. **Опциональность** - пустое поле не вызывает ошибок
+
+**Валидация комментария:**
+- Максимум 140 символов
+- Опциональное поле
+
+**Сообщения об ошибках:**
+- "Неправильный хэштег"
+- "Превышено количество хэштегов"
+- "Хэштеги повторяются"
+- "Длина комментария больше 140 символов"
+
+---
+
+### 4. Интеграция в main.js
+
+#### [main.js](file:///d:/antigravity/anti-keksagram/js/main.js)
+
+Добавлены импорты новых модулей:
+```javascript
+import './form.js';
+import './validation.js';
+```
+
+---
+
+## Тестирование
+
+### Автоматизированное тестирование
+
+| Тест | Входные данные | Результат |
+|------|----------------|-----------|
+| Pristine загружена | - | ✅ `typeof Pristine === 'function'` |
+| Невалидный хэштег | `invalid` | ✅ Ошибка "Неправильный хэштег" |
+| Валидные хэштеги | `#test #hello` | ✅ Валидация пройдена |
+| Дубликаты | `#test #TEST #Test` | ✅ Ошибка "Хэштеги повторяются" |
+| Превышение лимита | `#one #two #three #four #five #six` | ✅ Ошибка "Превышено количество" |
+| Длинный хэштег | `#verylonghashtagmorethan20characters` | ✅ Ошибка "Неправильный хэштег" |
+| Длинный комментарий | 150 символов | ✅ Ошибка "Длина больше 140" |
+| Пустые поля | Пустые хэштеги и комментарий | ✅ Валидация пройдена |
+
+### Ручное тестирование
+
+| Тест | Действия | Результат |
+|------|----------|-----------|
+| Открытие формы | Выбор файла | ✅ Форма открылась |
+| Закрытие по кнопке | Клик на × | ✅ Форма закрылась |
+| Закрытие по Esc | Esc (фокус вне полей) | ✅ Форма закрылась |
+| Esc в хэштегах | Фокус в хэштегах → Esc | ✅ Форма НЕ закрылась |
+| Esc в комментарии | Фокус в комментарии → Esc | ✅ Форма НЕ закрылась |
+| Сброс полей | Ввод → закрытие → открытие | ✅ Поля пустые |
+
+---
+
+## Особенности реализации
+
+### 1. Проверка фокуса
+Использует `document.activeElement` для определения текущего активного элемента, что обеспечивает корректную работу обработчика Esc.
+
+### 2. Function declarations
+Использование `function` вместо `const` для функций решает проблему hoisting и позволяет вызывать функции до их объявления.
+
+### 3. Регулярное выражение
+`/^#[a-zа-яё0-9]{1,19}$/i` покрывает все требования к формату хэштега в одной проверке.
+
+### 4. Set для уникальности
+Использование `Set` вместе с `toLowerCase()` обеспечивает эффективную регистронезависимую проверку дубликатов.
+
+### 5. Разбиение по пробелам
+Использование `/\s+/` вместо `' '` корректно обрабатывает множественные пробелы между хэштегами.
+
+### 6. Сброс полей
+Обязательный сброс `uploadInput.value = ''` обеспечивает срабатывание события `change` при повторном выборе того же файла.
+
+---
+
+## Архитектура
+
+```
+main.js
+  ├── import form.js (инициализация обработчиков)
+  └── import validation.js (инициализация Pristine)
+
+form.js
+  ├── openUploadForm() - показ формы
+  ├── closeUploadForm() - скрытие формы + сброс
+  └── onDocumentKeydown() - проверка фокуса для Esc
+
+validation.js
+  ├── parseHashtags() - разбор строки на массив
+  ├── validateHashtagFormat() - проверка формата
+  ├── validateHashtagCount() - проверка количества
+  ├── validateHashtagUniqueness() - проверка дубликатов
+  ├── validateCommentLength() - проверка длины
+  └── form submit handler - блокировка при ошибках
+```
+
+---
+
+## Итоги
+
+✅ Задание module9-task1 выполнено полностью
+
+✅ Форма имеет корректные атрибуты для отправки на сервер
+
+✅ Реализовано открытие/закрытие формы с учетом всех сценариев
+
+✅ Все правила валидации хэштегов работают корректно
+
+✅ Комментарий валидируется согласно требованиям
+
+✅ Форма не отправляется при невалидных данных
+
+✅ Поля сбрасываются при закрытии формы
+
+✅ Код соответствует стандартам ESLint
+
+✅ Приложение готово к реализации серверной отправки данных
