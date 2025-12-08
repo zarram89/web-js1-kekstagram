@@ -1,12 +1,15 @@
-import { createPhotos } from './data.js';
 import { renderPictures } from './gallery.js';
+import { getData } from './api.js';
+import { showAlert } from './message.js';
 import './form.js';
 import './validation.js';
 import './scale.js';
 import './effect.js';
 
-// Генерация данных
-const photos = createPhotos();
-
-// Отрисовка миниатюр
-renderPictures(photos);
+getData()
+  .then((pictures) => {
+    renderPictures(pictures);
+  })
+  .catch(() => {
+    showAlert();
+  });

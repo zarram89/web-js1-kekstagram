@@ -1,14 +1,23 @@
 // Модуль для валидации хэштегов и комментариев с использованием Pristine
+import { sendData } from './api.js';
+import { showSuccessMessage, showErrorMessage } from './message.js';
+import { closeUploadForm } from './form.js';
 
 // Элементы DOM
 const form = document.querySelector('.img-upload__form');
 const hashtagsInput = document.querySelector('.text__hashtags');
 const descriptionTextarea = document.querySelector('.text__description');
+const submitButton = document.querySelector('.img-upload__submit');
 
 // Константы для валидации
 const MAX_HASHTAGS = 5;
 const MAX_COMMENT_LENGTH = 140;
 const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
+
+const SubmitButtonText = {
+  IDLE: 'Опубликовать',
+  SENDING: 'Сохраняю...',
+};
 
 // Инициализация Pristine
 const pristine = new Pristine(form, {
@@ -77,6 +86,18 @@ pristine.addValidator(
   'Длина комментария больше 140 символов'
 );
 
+// Блокировка кнопки отправки
+const blockSubmitButton = () => {
+  submitButton.disabled = true;
+  submitButton.textContent = SubmitButtonText.SENDING;
+};
+
+// Разблокировка кнопки отправки
+const unblockSubmitButton = () => {
+  submitButton.disabled = false;
+  submitButton.textContent = SubmitButtonText.IDLE;
+};
+
 // Обработка отправки формы
 form.addEventListener('submit', (evt) => {
   evt.preventDefault();
@@ -84,8 +105,15 @@ form.addEventListener('submit', (evt) => {
   const isValid = pristine.validate();
 
   if (isValid) {
-    // TODO: отправка на сервер
+    blockSubmitButton();
+    sendData(new FormData(evt.target))
+      .then(() => {
+        closeUploadForm();
+        showSuccessMessage();
+      })
+      .catch(() => {
+        showErrorMessage();
+      })
+      .finally(unblockSubmitButton);
   }
 });
-
-export { pristine };

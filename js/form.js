@@ -29,6 +29,13 @@ function closeUploadForm() {
 // Обработчик нажатия Esc
 function onDocumentKeydown(evt) {
   if (evt.key === 'Escape') {
+    // Если открыто сообщение об ошибке, Esc не должен закрывать форму
+    const isErrorDetailsOpen = document.querySelector('.error');
+
+    if (isErrorDetailsOpen) {
+      return;
+    }
+
     // Проверяем, не в текстовом ли поле сейчас фокус
     const activeElement = document.activeElement;
     const isTextFieldFocused =
@@ -51,3 +58,5 @@ function openUploadForm() {
 // Инициализация обработчиков
 uploadInput.addEventListener('change', openUploadForm);
 uploadCancel.addEventListener('click', closeUploadForm);
+
+export { closeUploadForm };
