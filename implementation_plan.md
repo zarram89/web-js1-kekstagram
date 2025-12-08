@@ -1312,3 +1312,71 @@ import './validation.js';
 2. Кнопка блокируется ("Сохраняю..." или просто disabled).
 3. Успех -> форма закрылась, все сбросилось, показано "Изображение успешно загружено".
 4. Ошибка -> форма осталась открытой, показано "Ошибка загрузки файла". Закрыть сообщение -> форма на месте.
+
+---
+
+## Задание module12-task1: Фильтрация изображений
+
+# Цель
+Реализовать фильтрацию и сортировку загруженных изображений с задержкой отрисовки (debounce).
+
+## User Review Required
+Нет критических изменений архитектуры, но меняется поведение `renderPictures` (очистка контейнера).
+
+## Proposed Changes
+
+### [Utils]
+#### [MODIFY] [util.js](file:///d:/antigravity/anti-keksagram/js/util.js)
+- Добавить функцию `debounce`.
+
+### [Gallery]
+#### [MODIFY] [gallery.js](file:///d:/antigravity/anti-keksagram/js/gallery.js)
+- Изменить `renderPictures`: очищать `.pictures` от старых `.picture` перед добавлением новых.
+
+### [Filter]
+#### [NEW] [filter.js](file:///d:/antigravity/anti-keksagram/js/filter.js)
+- Экспортировать `initFilters(pictures, callback)`.
+- Логика переключения кнопок (стили).
+- Логика сортировки:
+  - Default: исходный массив.
+  - Random: `[...pictures].sort(() => 0.5 - Math.random()).slice(0, 10)`.
+  - Discussed: `[...pictures].sort((a, b) => b.comments.length - a.comments.length)`.
+- Использование `debounce` для вызова `renderPictures`.
+
+### [Main]
+#### [MODIFY] [main.js](file:///d:/antigravity/anti-keksagram/js/main.js)
+- Импорт `initFilters`.
+- Вызов `initFilters(pictures, debouncedRenderPictures)`.
+
+## Verification Plan
+### Automated Tests
+- (Нет автотестов)
+### Manual Verification
+1. Открыть страницу, дождаться загрузки.
+2. Фильтры появились?
+3. Нажать "Случайные" -> Видно 10 фото? Они разные?
+4. Нажать "Обсуждаемые" -> Первое фото имеет больше всего комментов? (Проверить при клике).
+5. Быстро переключать -> отрисовка происходит с задержкой (не мелькает).
+
+---
+
+## Задание module12-task2: Загрузка пользовательского изображения
+
+# Цель
+Реализовать отображение выбранного пользователем файла в форме редактирования вместо заглушки.
+
+## Proposed Changes
+
+### [Upload Preview]
+#### [MODIFY] [form.js](file:///d:/antigravity/anti-keksagram/js/form.js)
+- Добавить логику чтения файла через `FileReader`.
+- Обновлять `src` у `.img-upload__preview img`.
+- Обновлять `style.backgroundImage` у `.effects__preview`.
+- Проверка поддерживаемых расширений (`FILE_TYPES: ['jpg', 'jpeg', 'png']`).
+
+## Verification Plan
+### Manual Verification
+1. Нажать "Загрузить".
+2. Выбрать файл (котик.jpg).
+3. Убедиться, что в редакторе открылся именно котик.
+4. Убедиться, что миниатюры эффектов тоже показывают котика.

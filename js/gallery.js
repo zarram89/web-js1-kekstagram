@@ -33,6 +33,8 @@ const createPictureElement = (photo) => {
 
 // Отрисовка всех миниатюр
 const renderPictures = (photos) => {
+  picturesContainer.querySelectorAll('.picture').forEach((element) => element.remove());
+
   const fragment = document.createDocumentFragment();
 
   photos.forEach((photo) => {

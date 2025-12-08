@@ -2,6 +2,8 @@
 import { resetScale } from './scale.js';
 import { resetEffect } from './effect.js';
 
+const FILE_TYPES = ['jpg', 'jpeg', 'png'];
+
 // Получение элементов DOM
 const uploadInput = document.querySelector('.img-upload__input');
 const uploadOverlay = document.querySelector('.img-upload__overlay');
@@ -9,6 +11,8 @@ const uploadCancel = document.querySelector('.img-upload__cancel');
 const hashtagsInput = document.querySelector('.text__hashtags');
 const descriptionInput = document.querySelector('.text__description');
 const body = document.querySelector('body');
+const preview = document.querySelector('.img-upload__preview img');
+const effectsPreviews = document.querySelectorAll('.effects__preview');
 
 // Функция закрытия формы
 function closeUploadForm() {
@@ -53,6 +57,18 @@ function openUploadForm() {
   uploadOverlay.classList.remove('hidden');
   body.classList.add('modal-open');
   document.addEventListener('keydown', onDocumentKeydown);
+
+  const file = uploadInput.files[0];
+  const fileName = file.name.toLowerCase();
+
+  const matches = FILE_TYPES.some((it) => fileName.endsWith(it));
+
+  if (matches) {
+    preview.src = URL.createObjectURL(file);
+    effectsPreviews.forEach((effect) => {
+      effect.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
+    });
+  }
 }
 
 // Инициализация обработчиков
